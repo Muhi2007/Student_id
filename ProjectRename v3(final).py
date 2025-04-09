@@ -38,6 +38,7 @@ def starting():
 
 #Function for giving random names
 def mainFunction(yol):
+    k = 0
     idFile = os.path.join(yol, "id_map.csv") 
     names = os.listdir(yol)
 
@@ -48,36 +49,59 @@ def mainFunction(yol):
 
         for i in names:
             if "." not in i: 
+                k += 1
                 uniq = unikalID()
                 old = os.path.join(yol, i)
                 new = os.path.join(yol, uniq)
 
                 os.rename(old, new)
                 writer.writerow([i, uniq])
+        writer.writerow(["k= ", k])
+    forbidden_list = []
     root.after(1000, lambda: label.config(text="Finished!"))
 
 
 #Function for decoding the random names
 def mainDecoding(yol):
     idList = []
+    finalList = []
     items = os.listdir(yol)
     items.remove('id_map.csv')
     #For getting all the data from CVS file
-    with open(idFile, encoding= "utf-8", newline="") as file:
+    with open(idFile, "r", encoding= "utf-8", newline="") as file:
         reader = csv.reader(file)
+
         for i in reader:
             idList.append(i)
 
+    k = int(idList[len(idList)-1][1])
+    print(k)
+    print(items)
+    idList.pop(len(idList)-1)
     idList.pop(0)
     
     for i in range(len(idList)):
         m = idList[i]
-        if m[1] in items:
-            os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
-    
 
-    if len(idList) == len(items):
+        if m[0] not in items:
+            if m[1] in items:
+                k -=1
+                os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
+        else:
+            if k != 0:
+                finalList.append(m)
+                root.after(1000, lambda: label.config(text=f"Error: \n {m[0]} is already exsist. \n Please move it to another location"))
+    
+    print(finalList)
+    if k == 0:
         os.remove(os.path.join(yol, 'id_map.csv'))
+    else:
+        with open(idFile, "w", encoding= "utf-8", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Used", "ID"])
+            for i in finalList:
+                writer.writerow(i)
+            writer.writerow(["k= ", k])
         
     root.after(1000, lambda: label.config(text="Finished!"))
     
