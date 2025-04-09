@@ -5,15 +5,17 @@ import random as rd
 import tkinter as tk
 from tkinter import messagebox
 import csv
+global forbidden_list 
 forbidden_list = []
 
 
 #For chaning concole encoding to UTF-8(In case anyone used an foregin name)
 sys.stdout.reconfigure(encoding='utf-8')
 
-def unikalID():
+def unikalID(items):
     x = rd.randint(1000, 10000)
-    while x in forbidden_list:
+    while x in forbidden_list and x not in items:
+
         x = rd.randint(1000, 10000)
     forbidden_list.append(x)
     return str(x)
@@ -48,16 +50,17 @@ def mainFunction(yol):
         writer.writerow(["Original Name", "ID"])
 
         for i in names:
-            if "." not in i: 
+            if os.path.isdir(os.path.join(yol, i)): 
                 k += 1
-                uniq = unikalID()
+                uniq = unikalID(os.listdir(yol))
                 old = os.path.join(yol, i)
                 new = os.path.join(yol, uniq)
 
                 os.rename(old, new)
                 writer.writerow([i, uniq])
         writer.writerow(["k= ", k])
-    forbidden_list = []
+    forbidden_list.clear()
+    print(forbidden_list)
     root.after(1000, lambda: label.config(text="Finished!"))
 
 
@@ -67,6 +70,7 @@ def mainDecoding(yol):
     finalList = []
     items = os.listdir(yol)
     items.remove('id_map.csv')
+
     #For getting all the data from CVS file
     with open(idFile, "r", encoding= "utf-8", newline="") as file:
         reader = csv.reader(file)
@@ -75,8 +79,6 @@ def mainDecoding(yol):
             idList.append(i)
 
     k = int(idList[len(idList)-1][1])
-    print(k)
-    print(items)
     idList.pop(len(idList)-1)
     idList.pop(0)
     
@@ -90,19 +92,21 @@ def mainDecoding(yol):
         else:
             if k != 0:
                 finalList.append(m)
-                root.after(1000, lambda: label.config(text=f"Error: \n {m[0]} is already exsist. \n Please move it to another location"))
-    
-    print(finalList)
+
     if k == 0:
         os.remove(os.path.join(yol, 'id_map.csv'))
     else:
         with open(idFile, "w", encoding= "utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["Used", "ID"])
+
             for i in finalList:
                 writer.writerow(i)
             writer.writerow(["k= ", k])
-        
+    if finalList:
+        logs.config(text=f"Could not rename: \n{finalList}")
+    else:
+        logs.config(text="")
     root.after(1000, lambda: label.config(text="Finished!"))
     
 
@@ -124,5 +128,8 @@ label.pack(pady = 15)
 
 button = tk.Button(root, width= 25 , font=("Arial", 13, "bold"), text = "START", command= starting)
 button.pack(pady = 15)
+
+logs = tk.Label(root, font=("Arial", 12, "bold"), bg= root["bg"])
+logs.pack(pady=5)
 
 root.mainloop()
