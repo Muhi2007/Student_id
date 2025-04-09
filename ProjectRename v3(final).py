@@ -59,8 +59,8 @@ def mainFunction(yol):
                 os.rename(old, new)
                 writer.writerow([i, uniq])
         writer.writerow(["k= ", k])
+        
     forbidden_list.clear()
-    print(forbidden_list)
     root.after(1000, lambda: label.config(text="Finished!"))
 
 
