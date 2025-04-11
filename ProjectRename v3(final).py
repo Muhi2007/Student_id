@@ -7,18 +7,32 @@ from tkinter import messagebox
 import csv
 global forbidden_list 
 forbidden_list = []
-
+x = 100
 
 #For chaning concole encoding to UTF-8(In case anyone used an foregin name)
 sys.stdout.reconfigure(encoding='utf-8')
 
-def unikalID(items):
-    x = rd.randint(1000, 10000)
+def unikalID(items, x):
     while x in forbidden_list and x not in items:
-
-        x = rd.randint(1000, 10000)
+        x += 1
     forbidden_list.append(x)
     return str(x)
+
+def is_file_open(yol):
+    try:
+        with open(yol, "a+"):
+            return False
+    except PermissionError:
+        return True
+
+def check_for_open_files(yol):
+    for root, dirs, files in os.walk(yol):
+        for file in files:
+            full_path = os.path.join(root, file)
+            if is_file_open(full_path):
+                return True
+            
+    return False
 
 def starting():
     yol = entry.get()
@@ -27,11 +41,11 @@ def starting():
     result = messagebox.askyesno("Do you want to run code?", f"{yol} \n Do you sure about this destination?")
     if result:
         if os.path.exists(yol):
-            label.config(text="Running...")
-            if os.path.exists(idFile):
-                mainDecoding(yol)
-            else:
-                mainFunction(yol)
+                if os.path.exists(idFile):
+                    mainDecoding(yol)
+                else:    
+                    mainFunction(yol)
+                label.config(text="Running...")
         else:
             label.config(text="Error: \nWrong path")
     else:
@@ -45,23 +59,27 @@ def mainFunction(yol):
     names = os.listdir(yol)
 
     #Creates a cvs file for storing all the names with their IDs
-    with open(idFile, "w", encoding= "utf-8", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Original Name", "ID"])
+    if not is_file_open(idFile):
+        with open(idFile, "w", encoding= "utf-8", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Original Name", "ID"])
 
-        for i in names:
-            if os.path.isdir(os.path.join(yol, i)): 
-                k += 1
-                uniq = unikalID(os.listdir(yol))
-                old = os.path.join(yol, i)
-                new = os.path.join(yol, uniq)
+            for i in names:
+                if os.path.isdir(os.path.join(yol, i)) and not check_for_open_files(os.path.join(yol, i)): 
+                    k += 1
+                    uniq = unikalID(os.listdir(yol), x)
+                    old = os.path.join(yol, i)
+                    new = os.path.join(yol, uniq)
 
-                os.rename(old, new)
-                writer.writerow([i, uniq])
-        writer.writerow(["k= ", k])
-        
-    forbidden_list.clear()
-    root.after(1000, lambda: label.config(text="Finished!"))
+                    os.rename(old, new)
+                    writer.writerow([i, uniq])
+            writer.writerow(["k= ", k])
+            
+        forbidden_list.clear()
+        root.after(1000, lambda: label.config(text="Finished!"))
+    else:
+        label.config(text="Finised (With exceptions)")
+        logs.config(text="Error: \n One file is open at the give destination")
 
 
 #Function for decoding the random names
@@ -72,42 +90,48 @@ def mainDecoding(yol):
     items.remove('id_map.csv')
 
     #For getting all the data from CVS file
-    with open(idFile, "r", encoding= "utf-8", newline="") as file:
-        reader = csv.reader(file)
+    if not is_file_open(os.path.join(yol, "id_map.csv")):
+        with open(idFile, "r", encoding= "utf-8", newline="") as file:
+            reader = csv.reader(file)
 
-        for i in reader:
-            idList.append(i)
+            for i in reader:
+                idList.append(i)
 
-    k = int(idList[len(idList)-1][1])
-    idList.pop(len(idList)-1)
-    idList.pop(0)
-    
-    for i in range(len(idList)):
-        m = idList[i]
+        k = int(idList[len(idList)-1][1])
+        idList.pop(len(idList)-1)
+        idList.pop(0)
+        
+        for i in range(len(idList)):
+            m = idList[i]
 
-        if m[0] not in items:
-            if m[1] in items:
-                k -=1
-                os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
-        else:
-            if k != 0:
+            if m[0] not in items:
+                if m[1] in items and not check_for_open_files(os.path.join(yol, m[1])):
+                    k -=1
+                    os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
+                else:
+                    finalList.append(m)
+            else:
                 finalList.append(m)
+        print(finalList)
 
-    if k == 0:
-        os.remove(os.path.join(yol, 'id_map.csv'))
-    else:
-        with open(idFile, "w", encoding= "utf-8", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(["Used", "ID"])
+        if k == 0:
+            os.remove(os.path.join(yol, 'id_map.csv'))
+        else:
+            with open(idFile, "w", encoding= "utf-8", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(["Used", "ID"])
 
-            for i in finalList:
-                writer.writerow(i)
-            writer.writerow(["k= ", k])
-    if finalList:
-        logs.config(text=f"Could not rename: \n{finalList}")
+                for i in finalList:
+                    writer.writerow(i)
+                writer.writerow(["k= ", k])
+        if finalList:
+            logs.config(text=f"Could not rename: \n{finalList}")
+        else:
+            logs.config(text="")
+        root.after(1000, lambda: label.config(text="Finished!"))
     else:
-        logs.config(text="")
-    root.after(1000, lambda: label.config(text="Finished!"))
+        label.config(text="Finised (With exceptions)")
+        logs.config(text="Error: \n One file is open at the give destination")
     
 
 #Tkinter for creating the interface
