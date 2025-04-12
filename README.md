@@ -29,7 +29,7 @@ No external libraries are required — only built-in Python modules:
 
 ## 👤 Author
 
-- Created by Muhammad
+- Created by Muhammad Teymurlu
 - Project for Baku Higher Oil School
 
 ---
