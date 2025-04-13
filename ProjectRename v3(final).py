@@ -177,6 +177,7 @@ def mainDecoding(yol):
 
             if m[0] not in items:
                 if m[1] in items and not check_for_open_files(os.path.join(yol, m[1])):
+                    k -= 1
                     os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
                     items = os.listdir(yol)
                 else:
