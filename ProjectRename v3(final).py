@@ -177,8 +177,8 @@ def mainDecoding(yol):
 
             if m[0] not in items:
                 if m[1] in items and not check_for_open_files(os.path.join(yol, m[1])):
-                    k -=1
                     os.rename(os.path.join(yol, m[1]), os.path.join(yol, m[0]))
+                    items = os.listdir(yol)
                 else:
                     finalList.append(m)
             else:
@@ -212,7 +212,6 @@ root = tk.Tk()
 root.geometry("500x600")
 root.title("RandomNamer")
 root.configure(bg="lightblue")
-root.resizable(False, False)
 root.bind("<Return>", lambda event: button.invoke())
 
 entry = tk.Entry(root, width = 40, font=("Arial", 15, "bold"), fg="White", bg="Grey")
